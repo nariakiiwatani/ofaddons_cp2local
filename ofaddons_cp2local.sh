@@ -21,7 +21,7 @@ usage() {
 	exit 1
 }
 
-set -ueo pipefail
+set -u
 script_dir=$(cd "$(dirname "$0")"; pwd)
 PATH="$PATH:$script_dir"
 source pathlib.bash
@@ -100,28 +100,49 @@ if [ ! $DST_DIR ]; then DST_DIR=$(path_standardize "$PROJ_ROOT/addons"); fi
 if [ ! -e $DST_DIR ]; then mkdir -p $DST_DIR; fi
 
 RESULT=
+
+addResult() {
+	if $ABSOLUTE; then
+		RESULT+=$(path_get_absolute $1)\\n
+	else
+		RESULT+=$(path_get_relative $PROJ_ROOT $1)\\n
+	fi
+}
+
 copy() {
 	for OPT in "$@"
 	do
-		NAME=${1#./}
+		NAME=$(path_standardize $1)
 		NAME=${NAME##*/}
 		local COPY_FROM=""
 		if [ ! -d $ADDONS_DIR ] || [ ! -d $ADDONS_DIR/$NAME ]; then
-			echo "could not find $1"
-			RESULT+=$1\\n
-			shift 1
-			continue
+			if [ -d $DST_DIR/$NAME ]; then
+				echo "$NAME : already copied or cloned"
+				addResult $DST_DIR/$NAME
+				shift 1
+				continue
+			fi
+			echo "$ADDONS_DIR/$NAME nor $DST_DIR/$NAME found. Do you want to clone from github?"
+			echo "[username] to clone, [blank] to skip"
+			printf :
+			read USERNAME
+			local SKIP=true
+			if [ ! -z "$USERNAME" ]; then 
+				git clone git@github.com:$USERNAME/$NAME $ADDONS_DIR/$NAME
+				if [ $? -eq 0 ]; then SKIP=false ; fi
+			fi
+			if $SKIP; then
+				RESULT+=$1\\n
+				shift 1
+				continue
+			fi
 		fi
 		local EX=""
 		if $IGNORE_EXAMPLE; then EX+="--exclude=example* "; fi
 		if $IGNORE_GIT; then EX+="--exclude=.git* "; fi
 		echo "copying from $ADDONS_DIR/$NAME to $DST_DIR/$NAME"
 		rsync -ar $EX $ADDONS_DIR/$NAME $DST_DIR
-		if $ABSOLUTE; then
-			RESULT+=$(path_get_absolute $DST_DIR/$NAME)\\n
-		else
-			RESULT+=$(path_get_relative $PROJ_ROOT $DST_DIR/$NAME)\\n
-		fi
+		addResult $DST_DIR/$NAME
 		shift 1
 	done
 }
@@ -144,16 +165,16 @@ if $INTERACTIVE; then
 	while read ADDON_NAME
 	do
 		if [ -z "$ADDON_NAME" ]; then break; fi
+		RESULT=
 		copy ofx${ADDON_NAME#ofx}
 		updateConfig
-		RESULT=
 		echo 
 		echo "Enter addon name with or without 'ofx'. blank to exit."
 		printf :
 	done
 else
 	copy $(echo $(<$CONFIG_FILE))
-	updateConfig
+	echo $RESULT > $CONFIG_FILE
 fi
 
 
