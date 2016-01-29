@@ -43,6 +43,10 @@ Enter addon name with or without 'ofx'. blank to exit.
 - This script doesn't update your project file.  
 So you may have to do it by yourself or with ProjectGenerator.  
 
+## Change log
+1/29/2016 asking for cloning from github repo when an addon is not found on local
+1/29/2016 initial commit
+
 ## LICENSE
 The MIT License (MIT)
 
