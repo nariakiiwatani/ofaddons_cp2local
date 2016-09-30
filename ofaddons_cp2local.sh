@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PROGNAME=$(basename $0)
-VERSION="0.9.0"
+VERSION="0.9.4"
 
 usage() {
 	echo "Usage: $PROGNAME [OPTIONS]"
@@ -115,13 +115,12 @@ copy() {
 		NAME=$(path_standardize $1)
 		NAME=${NAME##*/}
 		local COPY_FROM=""
-		if [ ! -d $ADDONS_DIR ] || [ ! -d $ADDONS_DIR/$NAME ]; then
-			if [ -d $DST_DIR/$NAME ]; then
-				echo "$NAME : already copied or cloned"
-				addResult $DST_DIR/$NAME
-				shift 1
-				continue
-			fi
+		if [ -d $DST_DIR/$NAME ]; then
+			echo "$NAME : already copied or cloned"
+			addResult $DST_DIR/$NAME
+			shift 1
+			continue
+		elif [ ! -d $ADDONS_DIR ] || [ ! -d $ADDONS_DIR/$NAME ]; then
 			echo "$ADDONS_DIR/$NAME nor $DST_DIR/$NAME found. Do you want to clone from github?"
 			echo "[username] to clone, [blank] to skip"
 			printf :

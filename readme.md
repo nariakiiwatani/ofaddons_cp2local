@@ -44,6 +44,7 @@ Enter addon name with or without 'ofx'. blank to exit.
 So you may have to do it by yourself or with ProjectGenerator.  
 
 ## Change log
+9/30/2016 prevent from copying when local folder already exists
 1/29/2016 asking for cloning from github repo when an addon is not found on local
 1/29/2016 initial commit
 
